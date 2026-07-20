@@ -18,7 +18,9 @@ Gem::Specification.new do |spec|
     generation and shrinking.
   DESC
   spec.homepage = "https://github.com/lukej57/tprop"
-  spec.license  = "MIT"
+  # Mostly MIT; the engine files ported from minithesis are MPL-2.0 (see the
+  # Licensing section of README.md).
+  spec.licenses = ["MIT", "MPL-2.0"]
 
   spec.required_ruby_version = ">= 3.1.0"
 
@@ -39,7 +41,8 @@ Gem::Specification.new do |spec|
     "docs/**/*.md",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE.txt"
+    "LICENSE.txt",
+    "LICENSE-MPL.txt"
   ]
   spec.require_paths = ["lib"]
 

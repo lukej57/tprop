@@ -97,3 +97,19 @@ Don't remove that guard unless you are deliberately choosing to publish.
 `T` signals Sorbet-ecosystem membership; `prop` double-encodes *property-based
 testing* and `T::Struct.props`, the reflection surface the whole library is
 built on. Unclaimed on RubyGems and GitHub as of naming.
+
+## Licensing
+
+TProp is MIT-licensed ([`LICENSE.txt`](LICENSE.txt)) **except** the
+choice-sequence engine, which is a Ruby port of
+[minithesis](https://github.com/DRMacIver/minithesis) (© 2020 David R. MacIver)
+and therefore stays under its original **MPL-2.0**
+([`LICENSE-MPL.txt`](LICENSE-MPL.txt)). The MPL-covered files are:
+
+- `lib/tprop/test_case.rb`
+- `lib/tprop/gen.rb`
+- `lib/tprop/testing_state.rb`
+
+MPL-2.0 is file-level (weak) copyleft: those three files must stay MPL and keep
+their source available, but they combine freely with the MIT-licensed rest of
+the gem. If you modify them, keep the MPL header intact.

@@ -1,5 +1,13 @@
 # frozen_string_literal: true
 
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/ (see LICENSE-MPL.txt).
+#
+# This file is a Ruby port of parts of minithesis
+# (https://github.com/DRMacIver/minithesis), (C) 2020 David R. MacIver, used
+# under the MPL-2.0. The rest of TProp is MIT; see README.md "Licensing".
+
 module TProp
   # A Gen (a "Possibility" in minithesis terms) is a named recipe that turns a
   # TestCase into a value. Composition and primitives live here.
