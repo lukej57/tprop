@@ -65,6 +65,22 @@ PBT fit  ≈  (property density × input-space treachery)  /  oracle cost
 High-fit domains fall out immediately: **geometry, parsers, money, time, CRDTs,
 and state machines.** These are the examples the docs and guide should lead with.
 
+### Fit is not resonance — pick the example that has both
+
+The heuristic scores *fit*, not whether an example lands with a given audience.
+Geometry is a textbook-perfect fit but reads as academic to a
+workforce/rostering team; that is a resonance failure, not a fit failure, and
+the two are independent axes. The canonical example should score high on *both*.
+
+The chosen flagship is therefore **time-interval / shift algebra** (see
+[`examples/roster`](../examples/roster)): a time interval is one-dimensional
+geometry, so it inherits geometry's high fit (dense algebraic laws, treacherous
+boundaries — touching vs. overlapping, zero-length shifts, containment,
+midnight/DST wraparound — and free metamorphic oracles), while *being* a roster,
+which resonates with the target audience. **Money / allocation** ("splitting an
+amount N ways must not lose a cent") is the strongest runner-up and the most
+iconic single PBT bug.
+
 **Mutation-testing fit** (relevant because TProp's choice-buffer corpus can feed
 a mutation tester later — see `ROADMAP.md`):
 

@@ -50,11 +50,12 @@ methods raise `NotImplementedError` — the design is settled (see
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)); the implementation is not
 written yet.
 
-The intended usage already lives in
-[`test/tprop/example_test.rb`](test/tprop/example_test.rb) as the API north
-star (its properties are `skip`ped until the engine lands). **The first
-development task is implementing and validating `Derive` against real
-`sorbet-runtime`** — see [`docs/ROADMAP.md`](docs/ROADMAP.md).
+The intended usage already lives in the flagship worked example,
+[`examples/roster`](examples/roster) (shift/interval algebra) — real,
+executing domain logic plus the property tests that will run against it. The
+property tests are the API north star; they are `skip`ped until the engine
+lands. **The first development task is implementing and validating `Derive`
+against real `sorbet-runtime`** — see [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ```bash
 bin/setup        # install dependencies

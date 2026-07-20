@@ -46,7 +46,10 @@ The five-tier resolution system and derived generators are the headline.
       (reproducibility) and a prerequisite for the fuzzing horizon.
 - [ ] **Better float generation/shrinking.**
 - [ ] **Docs + the FCIS guide** treated as release-blocking, not optional.
-      Lead every doc with a high-fit domain (money, parser, state machine).
+      Lead every doc with the flagship high-fit domain — time-interval / shift
+      algebra (see `examples/roster`), which is both a textbook fit and
+      resonant with the target audience (see `JOBS_TO_BE_DONE.md`). Money and
+      parsers are secondary examples.
 
 ## v1.x — ergonomic expansions
 
