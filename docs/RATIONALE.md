@@ -61,6 +61,12 @@ and AR models are close to the worst possible property subjects:
 The subjects PBT wants — pure functions over immutable values — are exactly
 what idiomatic Rails declines to separate out.
 
+The flip side is the demonstration: refactor one of those slow, DB-backed tests
+to run over `T::Struct`s and it explores far more of the input space in far less
+wall-clock time — and finds boundary bugs the fixtures never contained. That
+before/after is specced as a runnable experiment in
+[`EXPERIMENTS.md`](EXPERIMENTS.md).
+
 ## The stance TProp takes, deliberately
 
 TProp targets the **functional-core / imperative-shell** architecture that

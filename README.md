@@ -38,7 +38,9 @@ they make property testing not just possible in Ruby but nearly free.
 | [`docs/JOBS_TO_BE_DONE.md`](docs/JOBS_TO_BE_DONE.md) | The jobs users hire TProp for, who the audience is, the fit heuristics, and non-goals. |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | The engine: choice-sequence generation, the shrinker, the `Gen` combinators, the `Derive` walk, and the five-tier generator resolution order. |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | What ships at 0.1, at 1.0, at 1.x, and the longer platform horizon (fuzzing, mutation testing, and more). |
+| [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md) | Designed demonstrations to run once the engine works — starting with the slow Rails test vs. property test benchmark (coverage-per-wall-clock, not just speed). |
 | [`docs/guides/functional-core-imperative-shell.md`](docs/guides/functional-core-imperative-shell.md) | The educational companion: how to architect for testability so TProp pays off. This is a load-bearing part of the product, not an afterthought. |
+| [`examples/roster`](examples/roster) | The flagship worked example: shift/interval algebra — real domain logic plus the property tests that will run against it. |
 
 ## Status
 

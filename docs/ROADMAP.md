@@ -50,6 +50,13 @@ The five-tier resolution system and derived generators are the headline.
       algebra (see `examples/roster`), which is both a textbook fit and
       resonant with the target audience (see `JOBS_TO_BE_DONE.md`). Money and
       parsers are secondary examples.
+- [ ] **Motivating experiment: slow Rails test vs. property test** (see
+      `EXPERIMENTS.md`). Refactor a database-backed example test to a property
+      test over `T::Struct`s and measure coverage-per-wall-clock, not just raw
+      speed. A docs/marketing deliverable adjacent to release; the "after" half
+      already exists (skipped) in `examples/roster`. The gem's own throughput
+      number (examples/sec) rides on the health-checks / `collect` feature
+      below — not a bespoke timer.
 
 ## v1.x — ergonomic expansions
 
