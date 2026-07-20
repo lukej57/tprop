@@ -37,7 +37,7 @@ something you actually build.
 | `interval.rb` | The domain as `T::Struct`s: `Interval` (a half-open shift) and `Roster` (a bag of shifts). `Roster.props` **is** the generator. |
 | `interval_ops.rb` | The functional core: pure, total functions (`merge`, `coverage`, `intersect`, …). No clock, no DB — the region where TProp's guarantees hold. |
 | `../../test/examples/roster_core_test.rb` | Executing, example-based tests that prove the core actually works today. |
-| `../../test/examples/roster_property_test.rb` | The property tests — the API north star. `skip`ped until the engine lands; unskip to run. |
+| `../../test/examples/roster_property_test.rb` | The property tests — the API north star. Executing (derivation is implemented); run with `bundle exec rake test`. |
 
 ## The one line that sells it
 
@@ -55,16 +55,18 @@ end
 
 It is very natural to assume that merging shifts preserves total hours. It does
 not — overlaps get counted once after merging. `roster_property_test.rb`
-includes that false property on purpose. When the engine lands, it fails, and
-the shrinker hands back the *minimal* counterexample:
+asserts that TProp *falsifies* that property, and it does: the shrinker hands
+back a minimal overlapping roster, e.g.
 
 ```
-shifts = [ [0, 2), [1, 3) ]   # total 4 minutes, but coverage is only 3
+shifts = [ [-1, 0), [-1, 0) ]   # total 2 minutes, but coverage is only 1
 ```
 
-Two shifts overlapping by a single minute. That minimal example — not a random
-100-shift roster — is the entire value proposition in one line: a failing
-random example is noise; a shrunk one is a bug report.
+Two overlapping unit shifts — not a random 100-shift roster. That minimal
+example is the entire value proposition in one line: a failing random example is
+noise; a shrunk one is a bug report. (The shrinker is locally minimal, so the
+exact literal may vary — e.g. two identical unit intervals — but it is always
+this small.)
 
 ## What to model next (the treachery you'd add)
 

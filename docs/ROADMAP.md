@@ -20,20 +20,22 @@ real over explicit generators. Derivation is the remaining headline work.
       `x < 100` shrinks to exactly `100`; an unsorted-list property shrinks to
       exactly `[1, 0]`. Note the shrinker finds a *locally* minimal example
       (minithesis-level), not a guaranteed global minimum.
-- **[ ] NEXT TASK: `Derive` — the `T::Struct` → generator walk.** Build and
-  validate it against real `sorbet-runtime`: confirm the `T::Types::*` node
-  classes and `.props` shape, recurse over Simple/Union/TypedArray/TypedHash/
-  Enum/nested-struct, and light up `assert_property(StructClass)`. The
-  `examples/roster` property tests are the acceptance target (a derived-struct
-  counterexample should shrink to the minimal field assignment).
+- [x] **`Derive` — the `T::Struct` → generator walk**, validated against real
+      `sorbet-runtime` (`test/tprop/derive_test.rb`). Walks `.props` and
+      recurses over the reified tree: `Simple` (primitives, nested structs,
+      enums), union nodes (`T::Types::Union` and the `SimplePairUnion` that
+      `T.nilable`/`T::Boolean` actually produce), `TypedArray`, `TypedHash`,
+      `TypedSet`, `FixedArray`. `assert_property(StructClass)` is live, with
+      call-site `overrides:`. Zero-anchored integers (shrink toward 0, reach
+      negatives) landed alongside.
+- [x] **`StructuralEquality` mixin** — value `==`/`eql?`/`hash` by walking
+      `.props`, so equational properties over structs work (the roster
+      round-trip / idempotence tests depend on it).
 
-Known v0.1 limitations to carry forward: `Derive`, registries, and
-`StructuralEquality` are still stubs; no recursion cycle detection in nested
-derivation; no example database; no targeted testing; float generation not yet
-implemented (`Gen.floats` raises).
-
-Known v0.1 limitations to carry forward: no recursion cycle detection in nested
-derivation, no example database, no targeted testing, naive float encoding.
+Known v0.1 limitations to carry forward: registries (tiers 2–4) are still stubs;
+no recursion cycle detection in nested derivation (self-referential structs
+raise a clear error); no example database; no targeted testing; naive float
+generation (`Gen.floats` still raises — `Derive` uses an internal naive float).
 
 ## v1.0 — the complete, honest core
 
@@ -47,9 +49,9 @@ The five-tier resolution system and derived generators are the headline.
 - [ ] **Declaration-site hints** via `extra: { tprop: ... }`, symbol-preferred.
 - [ ] **Recursion cycle detection** in nested-struct derivation (depth bound /
       seen-set), so self-referential structs generate finite values.
-- [ ] **`StructuralEquality` mixin** and **`assert_prop_equal`** (with float
-      tolerance) shipped and documented — the equational-property job depends on
-      these.
+- [x] **`StructuralEquality` mixin** shipped (see v0.1). Still to do:
+      **`assert_prop_equal`** (with float tolerance) for float-containing
+      structs.
 - [ ] **Example database** — persist failing choice sequences; replay them
       before random examples on the next run. This is a top adoption lever
       (reproducibility) and a prerequisite for the fuzzing horizon.

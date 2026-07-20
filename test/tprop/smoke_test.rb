@@ -24,11 +24,9 @@ class SmokeTest < Minitest::Test
     assert_respond_to self, :for_all
   end
 
-  # The engine core (TestCase/Gen/TestingState + TProp.check over an explicit
-  # gen:) is implemented — see engine_test.rb. The derivation layer is not yet,
-  # so pointing check at a struct class still raises. Canary: flip this when
-  # Derive lands.
-  def test_derive_is_still_a_stub
-    assert_raises(NotImplementedError) { TProp.check(Object) {} }
+  # Derive is implemented (see derive_test.rb). Pointing it at a non-struct is
+  # a clear argument error, not a mystery.
+  def test_derive_rejects_non_structs
+    assert_raises(ArgumentError) { TProp.check(Object) {} }
   end
 end

@@ -12,11 +12,11 @@ module TProp
   # Deliberate decisions (docs/ARCHITECTURE.md, "Companion value-object
   # support"): the comparison helper is protected (so == can call it on other),
   # matching is exact-class (not is_a?, to keep == symmetric), and nested-struct
-  # recursion is delegated to Ruby's built-in container equality.
+  # recursion is delegated to Ruby's built-in container equality rather than
+  # hand-rolled.
   module StructuralEquality
     def ==(other)
-      # TODO: exact-class check, then compare prop values in declaration order.
-      raise NotImplementedError, "StructuralEquality#== is not implemented yet"
+      other.class.equal?(self.class) && tprop_prop_values == other.tprop_prop_values
     end
 
     def eql?(other)
@@ -24,15 +24,15 @@ module TProp
     end
 
     def hash
-      # TODO: hash over prop values in declaration order.
-      raise NotImplementedError, "StructuralEquality#hash is not implemented yet"
+      [self.class, tprop_prop_values].hash
     end
 
     protected
 
-    # The comparison helper, protected so == can call it on `other`.
+    # Prop values in declaration order. Protected so == can call it on `other`
+    # (permitted because == only does so after confirming same class).
     def tprop_prop_values
-      raise NotImplementedError, "StructuralEquality#tprop_prop_values is not implemented yet"
+      self.class.props.keys.map { |name| public_send(name) }
     end
   end
 end

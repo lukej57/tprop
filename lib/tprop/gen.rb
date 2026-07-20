@@ -74,16 +74,27 @@ module TProp
         new(name: "constant(#{value.inspect})") { |_tc| value }
       end
 
-      # Any integer in an inclusive range. Draws one choice, shrinking toward
-      # the low end.
+      # Any integer in an inclusive range, anchored so it shrinks toward the
+      # in-range value nearest zero (0 if the range spans it, else the closest
+      # endpoint). Ranges that span zero also draw a sign, so both signs are
+      # reachable while all-zeros still decodes to 0.
       #
-      #   Gen.integers(0..100)
+      #   Gen.integers(0..100)      # shrinks toward 0
+      #   Gen.integers(-50..50)     # shrinks toward 0, reaches negatives
       #   Gen.integers(min: 1, max: 6)
       def integers(range = nil, min: nil, max: nil)
         lo, hi = bounds_from(range, min, max)
         raise ArgumentError, "empty integer range #{lo}..#{hi}" if hi < lo
 
-        new(name: "integers(#{lo}..#{hi})") { |tc| lo + tc.choice(hi - lo) }
+        name = "integers(#{lo}..#{hi})"
+        if lo >= 0
+          new(name: name) { |tc| lo + tc.choice(hi - lo) }         # nearest-zero is lo
+        elsif hi <= 0
+          new(name: name) { |tc| hi - tc.choice(hi - lo) }         # nearest-zero is hi
+        else
+          magnitude = [lo.abs, hi].max
+          new(name: name) { |tc| signed_choice(tc, magnitude, lo, hi) }
+        end
       end
 
       # A list of elements. Drawn as a repeated (continue-flag, element) so that
@@ -145,6 +156,23 @@ module TProp
       end
 
       private
+
+      # Draw a magnitude (shrinking to 0), then a sign, clamped to [lo, hi].
+      # magnitude == 0 draws no sign, so all-zeros decodes to 0.
+      def signed_choice(test_case, magnitude, lo, hi)
+        mag = test_case.choice(magnitude)
+        return 0 if mag.zero?
+
+        pos_ok = mag <= hi
+        neg_ok = mag <= lo.abs
+        if pos_ok && neg_ok
+          test_case.choice(1).zero? ? mag : -mag
+        elsif pos_ok
+          mag
+        else
+          -mag
+        end
+      end
 
       def bounds_from(range, min, max)
         if range
