@@ -25,7 +25,14 @@ Gem::Specification.new do |spec|
   spec.metadata["homepage_uri"]      = spec.homepage
   spec.metadata["source_code_uri"]   = spec.homepage
   spec.metadata["changelog_uri"]     = "#{spec.homepage}/blob/main/CHANGELOG.md"
-  spec.metadata["rubygems_mfa_required"] = "true"
+
+  # DO NOT PUBLISH TO RUBYGEMS. This gem is intentionally repo-only while it is
+  # very early days — install it via git (see the README). Setting
+  # allowed_push_host to a non-real host makes `gem push` refuse: it will only
+  # push to this host, which does not exist, so an accidental publish to
+  # rubygems.org is blocked. Do not change this without deliberately deciding
+  # to publish.
+  spec.metadata["allowed_push_host"] = "https://rubygems.invalid.do-not-publish"
 
   spec.files = Dir[
     "lib/**/*.rb",

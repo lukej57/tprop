@@ -61,6 +61,23 @@ bin/setup        # install dependencies
 bundle exec rake # run the test suite (green: stubs + skipped example properties)
 ```
 
+## Installation — repo only, not on RubyGems
+
+**TProp is deliberately not published to RubyGems and will not be while it is
+this early.** It is a long way from being something anyone but the author would
+use, and there is no intent to publish a `gem install tprop` version. The only
+supported way to use it is directly from this git repository:
+
+```ruby
+# Gemfile
+gem "tprop", git: "https://github.com/lukej57/tprop.git"
+```
+
+This is enforced, not just documented: the gemspec sets `allowed_push_host` to
+a non-existent host, so `gem push` refuses to publish (it would only push to a
+host that isn't real), guarding against an accidental release to rubygems.org.
+Don't remove that guard unless you are deliberately choosing to publish.
+
 ## Name
 
 `T` signals Sorbet-ecosystem membership; `prop` double-encodes *property-based
