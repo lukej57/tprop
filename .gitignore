@@ -16,3 +16,6 @@ Gemfile.lock
 *.swp
 .idea/
 .vscode/
+
+# Claude Code
+claude_resume.txt
