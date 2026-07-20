@@ -11,10 +11,11 @@ require "tprop/structural_equality"
 
 # TProp — property-based testing for Ruby, derived from Sorbet T::Struct types.
 #
-# See docs/ARCHITECTURE.md for the design this module surface tracks. The
-# implementation is currently scaffolding; methods raise NotImplementedError
-# until the engine is grounded against real sorbet-runtime (docs/ROADMAP.md,
-# "v0.1 FIRST TASK").
+# See docs/ARCHITECTURE.md for the design. The choice-sequence engine
+# (TestCase/Gen/TestingState) is implemented and works over explicit
+# generators; the derivation layer (Derive), the registries, and
+# StructuralEquality are still stubs that raise NotImplementedError
+# (docs/ROADMAP.md, "NEXT TASK").
 module TProp
   DEFAULT_MAX_EXAMPLES = 100
 
@@ -34,9 +35,19 @@ module TProp
     # @param seed [Integer, nil]
     # @raise [TProp::PropertyFailure] when the property fails (carrying the shrunk counterexample)
     def check(struct_class = nil, gen: nil, overrides: {}, max_examples: DEFAULT_MAX_EXAMPLES, seed: nil, &block)
-      # TODO: build the generator (Derive.for_struct or the given gen), then
-      # run it through TestingState. See docs/ARCHITECTURE.md.
-      raise NotImplementedError, "TProp.check is not implemented yet"
+      raise ArgumentError, "provide a struct class or gen:, not both" if struct_class && gen
+      raise ArgumentError, "a property block is required" unless block
+
+      generator = gen || Derive.for_struct(struct_class, overrides: overrides)
+      rng = seed ? Random.new(seed) : Random.new
+
+      state = TestingState.new(gen: generator, property: block, max_examples: max_examples, rng: rng)
+      state.run
+
+      raise Unsatisfiable, "no valid examples were generated (every case was rejected)" if state.valid_test_cases.zero?
+      return unless state.failed?
+
+      raise build_failure(generator, state.result, block)
     end
 
     # Register a generator for a whole type, applied at every nesting depth
@@ -58,6 +69,32 @@ module TProp
     def reset_registry!
       # TODO: reset the layered registries' user tier.
       raise NotImplementedError, "TProp.reset_registry! is not implemented yet"
+    end
+
+    private
+
+    # Replay the shrunk choice sequence once more to recover the concrete
+    # counterexample value and the error the property raised, then package them
+    # into a PropertyFailure.
+    def build_failure(generator, choices, property)
+      test_case = TestCase.for_choices(choices)
+      counterexample = nil
+      cause = nil
+      begin
+        counterexample = test_case.any(generator)
+        property.call(counterexample)
+      rescue StopTest, Frozen
+        # control flow only
+      rescue Exception => e # rubocop:disable Lint/RescueException
+        cause = e
+      end
+
+      message = +"Property failed after shrinking to a minimal counterexample:\n"
+      message << "  counterexample: #{counterexample.inspect}\n"
+      message << "  choice sequence: #{choices.inspect}\n"
+      message << "  cause: #{cause.class}: #{cause.message}" if cause
+
+      PropertyFailure.new(message, counterexample: counterexample, choices: choices.dup, cause_error: cause)
     end
   end
 end

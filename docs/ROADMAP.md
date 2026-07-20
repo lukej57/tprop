@@ -4,24 +4,33 @@ Tiered by release, and honest about what exists versus what is designed. The
 guiding rule: derivation quality and shrink quality come before everything else,
 because they are what make the core job (see `JOBS_TO_BE_DONE.md`) free.
 
-## v0.1 — engine skeleton (exists, needs grounding)
+## v0.1 — engine core (implemented)
 
-Scaffolded and smoke-tested against a **hand-written `T::Types` stub**, so the
-first work is grounding it in reality, not adding features.
+The choice-sequence engine is ported from
+[minithesis](https://github.com/DRMacIver/minithesis) (MPL-2.0) and runs for
+real over explicit generators. Derivation is the remaining headline work.
 
 - [x] `TestCase` choice-sequence recorder with overrun/invalid status.
 - [x] `TestingState` runner + four shrink passes under shortlex order.
-- [x] `Gen` combinators (`map`/`bind`/`satisfying`) and core primitives.
-- [x] `Derive` structural walk over `T::Types::*`.
-- [x] Minitest integration (F-not-E, seed reuse).
-- **[ ] FIRST TASK: validate `Derive` against real `sorbet-runtime`.** Replace
-  the stub, confirm the type-tree node classes and `.props` shape match, and fix
-  what differs. Nothing else is trustworthy until this is done.
-- Smoke tests already assert concrete shrink quality and should be kept as
-  regression anchors: `x < 100` shrinks to exactly `100`; an unsorted-list
-  property shrinks to exactly `[1, 0]`; a derived-struct counterexample shrinks
-  to the minimal field assignment (e.g. `nickname: "aaaaa"`, everything else at
-  its minimum).
+- [x] `Gen` combinators (`map`/`bind`/`satisfying`) and core primitives
+      (`constant`, `integers`, `lists`, `nilable`, `one_of`, `tuples`, `strings`).
+- [x] `TProp.check(gen:)` + Minitest `for_all` / `assert_property` (F-not-E,
+      seed reuse, failure carries the reproducing choice sequence).
+- [x] Shrink-quality regression anchors passing (`test/tprop/engine_test.rb`):
+      `x < 100` shrinks to exactly `100`; an unsorted-list property shrinks to
+      exactly `[1, 0]`. Note the shrinker finds a *locally* minimal example
+      (minithesis-level), not a guaranteed global minimum.
+- **[ ] NEXT TASK: `Derive` — the `T::Struct` → generator walk.** Build and
+  validate it against real `sorbet-runtime`: confirm the `T::Types::*` node
+  classes and `.props` shape, recurse over Simple/Union/TypedArray/TypedHash/
+  Enum/nested-struct, and light up `assert_property(StructClass)`. The
+  `examples/roster` property tests are the acceptance target (a derived-struct
+  counterexample should shrink to the minimal field assignment).
+
+Known v0.1 limitations to carry forward: `Derive`, registries, and
+`StructuralEquality` are still stubs; no recursion cycle detection in nested
+derivation; no example database; no targeted testing; float generation not yet
+implemented (`Gen.floats` raises).
 
 Known v0.1 limitations to carry forward: no recursion cycle detection in nested
 derivation, no example database, no targeted testing, naive float encoding.

@@ -24,4 +24,19 @@ module TProp
       super(message)
     end
   end
+
+  # Raised when a test has no valid examples (every case was rejected/overran).
+  class Unsatisfiable < Error; end
+
+  # --- Control-flow signals (not user-facing errors) ---------------------
+  #
+  # These deliberately subclass Exception, NOT StandardError, so that a bare
+  # `rescue => e` in user property code cannot swallow them — only the engine's
+  # explicit handlers catch them.
+
+  # Raised by TestCase#mark_status to abort the current run early.
+  class StopTest < Exception; end # rubocop:disable Lint/InheritException
+
+  # Raised when choices are made on a test case that has already completed.
+  class Frozen < Exception; end # rubocop:disable Lint/InheritException
 end

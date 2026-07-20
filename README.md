@@ -44,20 +44,31 @@ they make property testing not just possible in Ruby but nearly free.
 
 ## Status
 
-**Early scaffolding.** This repository currently contains the gem structure,
-the full module surface as documented stubs (choice-sequence `TestCase`,
-`TestingState` shrinker, `Gen` combinators, `Derive` walk, registries,
-`StructuralEquality`, Minitest integration), and the planning docs. The engine
-methods raise `NotImplementedError` — the design is settled (see
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)); the implementation is not
-written yet.
+**The engine runs; derivation is next.** The choice-sequence core — `TestCase`,
+the `Gen` combinators/primitives, and the `TestingState` runner + four-pass
+shrinker (ported from [minithesis](https://github.com/DRMacIver/minithesis)) —
+is implemented and tested. You can property-test today over explicit
+generators:
 
-The intended usage already lives in the flagship worked example,
-[`examples/roster`](examples/roster) (shift/interval algebra) — real,
-executing domain logic plus the property tests that will run against it. The
-property tests are the API north star; they are `skip`ped until the engine
-lands. **The first development task is implementing and validating `Derive`
-against real `sorbet-runtime`** — see [`docs/ROADMAP.md`](docs/ROADMAP.md).
+```ruby
+TProp.check(gen: TProp::Gen.lists(TProp::Gen.integers(0..1000))) do |list|
+  assert_equal list, list.sort   # fails; shrinks to the counterexample [1, 0]
+end
+```
+
+Shrinking is real: `x < 100` shrinks to exactly `100`, an unsorted list to
+`[1, 0]`, an over-long string to `"aaa"`. Same `seed:` reproduces a run, and a
+failure carries the reproducing choice sequence.
+
+Still stubbed (raise `NotImplementedError`), in priority order: **`Derive`** (the
+`T::Struct` → generator walk — the headline feature and **the next task**, to be
+built and validated against real `sorbet-runtime`), the `Registry`/`TypeRegistry`
+tiers, `StructuralEquality`, and the example database. See
+[`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+The flagship worked example, [`examples/roster`](examples/roster) (shift/interval
+algebra), is the API north star for `assert_property(StructClass)`; its property
+tests are `skip`ped until `Derive` lands.
 
 ```bash
 bin/setup        # install dependencies

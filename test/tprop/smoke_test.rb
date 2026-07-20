@@ -24,10 +24,11 @@ class SmokeTest < Minitest::Test
     assert_respond_to self, :for_all
   end
 
-  # The stubs are honest: calling into the unimplemented engine raises rather
-  # than silently passing. This test is a canary — flip it once the engine
-  # lands.
-  def test_engine_is_still_a_stub
+  # The engine core (TestCase/Gen/TestingState + TProp.check over an explicit
+  # gen:) is implemented — see engine_test.rb. The derivation layer is not yet,
+  # so pointing check at a struct class still raises. Canary: flip this when
+  # Derive lands.
+  def test_derive_is_still_a_stub
     assert_raises(NotImplementedError) { TProp.check(Object) {} }
   end
 end
