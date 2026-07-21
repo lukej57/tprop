@@ -52,9 +52,13 @@ The five-tier resolution system and derived generators are the headline.
 - [x] **`StructuralEquality` mixin** shipped (see v0.1). Still to do:
       **`assert_prop_equal`** (with float tolerance) for float-containing
       structs.
-- [ ] **Example database** — persist failing choice sequences; replay them
-      before random examples on the next run. This is a top adoption lever
-      (reproducibility) and a prerequisite for the fuzzing horizon.
+- [x] **Example database** — persist failing choice sequences; replay them
+      before random examples on the next run. `TProp::MemoryDatabase` and
+      `TProp::FileDatabase` (JSON-per-key under `.tprop-cache/`), injectable via
+      `TProp.check(database:, key:)`; Minitest's `assert_property`/`for_all`
+      wire it automatically keyed by `Class#method`. Replay-then-still-shrink,
+      and a passing run clears the stale entry. A top adoption lever
+      (reproducibility) and the substrate the fuzzing horizon reuses.
 - [ ] **Better float generation/shrinking.**
 - [ ] **Docs + the FCIS guide** treated as release-blocking, not optional.
       Lead every doc with the flagship high-fit domain — time-interval / shift

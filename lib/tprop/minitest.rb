@@ -18,9 +18,11 @@ module TProp
     #   assert_property(User) do |user|
     #     assert_equal user, User.from_hash(user.serialize)
     #   end
-    def assert_property(struct_class = nil, gen: nil, overrides: {}, max_examples: TProp::DEFAULT_MAX_EXAMPLES, seed: nil, &block)
+    def assert_property(struct_class = nil, gen: nil, overrides: {}, max_examples: TProp::DEFAULT_MAX_EXAMPLES, seed: nil,
+                        database: :default, key: nil, &block)
       seed ||= tprop_minitest_seed
-      TProp.check(struct_class, gen: gen, overrides: overrides, max_examples: max_examples, seed: seed, &block)
+      TProp.check(struct_class, gen: gen, overrides: overrides, max_examples: max_examples, seed: seed,
+                                database: tprop_database(database), key: key || tprop_default_key, &block)
       assert(true) # a completed run without a raised failure counts as an assertion
     rescue TProp::PropertyFailure => e
       raise tprop_failure_assertion(e)
@@ -32,16 +34,30 @@ module TProp
     #   for_all(TProp::Gen.integers(0..9), TProp::Gen.strings) do |n, s|
     #     assert_operator s.length, :>=, 0
     #   end
-    def for_all(*gens, max_examples: TProp::DEFAULT_MAX_EXAMPLES, seed: nil, &block)
+    def for_all(*gens, max_examples: TProp::DEFAULT_MAX_EXAMPLES, seed: nil, database: :default, key: nil, &block)
       seed ||= tprop_minitest_seed
       tuple = TProp::Gen.tuples(*gens)
-      TProp.check(gen: tuple, max_examples: max_examples, seed: seed) { |values| block.call(*values) }
+      TProp.check(gen: tuple, max_examples: max_examples, seed: seed,
+                  database: tprop_database(database), key: key || tprop_default_key) { |values| block.call(*values) }
       assert(true)
     rescue TProp::PropertyFailure => e
       raise tprop_failure_assertion(e)
     end
 
     private
+
+    # Resolve the :default sentinel to TProp's configured database; pass any
+    # other value (including nil, to disable) straight through.
+    def tprop_database(database)
+      database == :default ? TProp.default_database : database
+    end
+
+    # A stable per-test key so a failing example replays on the next run.
+    # (One property per test method is the clean pattern; multiple would share
+    # this key.)
+    def tprop_default_key
+      "#{self.class}##{name}"
+    end
 
     # Convert a PropertyFailure into a Minitest::Assertion (an F), preserving
     # the underlying failure's backtrace when there is one.

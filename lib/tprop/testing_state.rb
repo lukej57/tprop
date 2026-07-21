@@ -52,6 +52,16 @@ module TProp
       shrink
     end
 
+    # Seed a specific choice sequence (e.g. a stored failing example) before
+    # generation. If it still reproduces a failure, #result is set and #run's
+    # generation phase will no-op, so replay is instant; shrinking still refines
+    # it in case the code changed and it is no longer minimal.
+    def replay(choices)
+      return if choices.nil? || choices.empty?
+
+      test_function(TestCase.for_choices(choices))
+    end
+
     def failed?
       !@result.nil?
     end

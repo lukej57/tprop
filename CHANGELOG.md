@@ -35,9 +35,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The `examples/roster` property tests now execute (no longer skipped),
   including a test that asserts TProp *falsifies* the tempting "merge preserves
   total hours" property and shrinks to a minimal overlapping roster.
+- **Example database** — `TProp::MemoryDatabase` and `TProp::FileDatabase`
+  (JSON-per-key under `.tprop-cache/`), injectable via
+  `TProp.check(database:, key:)`. Minitest's `assert_property`/`for_all` wire it
+  up automatically, keyed by `Class#method`, via the configurable
+  `TProp.default_database`. A stored failing example replays first (then still
+  shrinks); a passing run clears the stale entry. Corrupt cache files are
+  ignored, never fatal.
 
 ### Still stubbed (raise `NotImplementedError`)
 
 - The `Registry`/`TypeRegistry` tiers (`register_type`, declaration-site hints),
-  the example database, recursion cycle detection, and `Gen.floats` (the public
-  primitive; `Derive` uses an internal naive float). See `docs/ROADMAP.md`.
+  recursion cycle detection, and `Gen.floats` (the public primitive; `Derive`
+  uses an internal naive float). See `docs/ROADMAP.md`.

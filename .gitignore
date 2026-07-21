@@ -19,3 +19,6 @@ Gemfile.lock
 
 # Claude Code
 claude_resume.txt
+
+# TProp example database (local reproducibility cache)
+.tprop-cache/

@@ -73,12 +73,17 @@ which walks `.props` and recurses over the reified `T::Types::*` tree
 Shrinking is real and reaches struct counterexamples: `x < 100` shrinks to
 exactly `100`, an unsorted list to `[1, 0]`, and the tempting-but-false "merging
 shifts preserves total hours" is falsified down to a minimal overlapping roster.
-Same `seed:` reproduces a run; a failure carries the reproducing choice
-sequence. See [`examples/roster`](examples/roster).
+See [`examples/roster`](examples/roster).
+
+Runs are reproducible: same `seed:` reproduces a run, a failure carries its
+choice sequence, and the **example database** persists a failing example so it
+replays first next time — under Minitest, `assert_property` wires this up
+automatically (cached in `.tprop-cache/`), so a fixed bug's example is retried
+on every run until it passes.
 
 Still stubbed (raise `NotImplementedError`): the `Registry`/`TypeRegistry` tiers
-(`register_type`, declaration-site hints), the example database, recursion cycle
-detection for self-referential structs, and nicer float generation. See
+(`register_type`, declaration-site hints), recursion cycle detection for
+self-referential structs, and nicer float generation. See
 [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ```bash

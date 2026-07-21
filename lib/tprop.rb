@@ -8,18 +8,33 @@ require "tprop/registry"
 require "tprop/derive"
 require "tprop/testing_state"
 require "tprop/structural_equality"
+require "tprop/database"
 
 # TProp — property-based testing for Ruby, derived from Sorbet T::Struct types.
 #
 # See docs/ARCHITECTURE.md for the design. The choice-sequence engine
-# (TestCase/Gen/TestingState) is implemented and works over explicit
-# generators; the derivation layer (Derive), the registries, and
-# StructuralEquality are still stubs that raise NotImplementedError
-# (docs/ROADMAP.md, "NEXT TASK").
+# (TestCase/Gen/TestingState), the derivation layer (Derive),
+# StructuralEquality, and the example database are implemented. The
+# Registry/TypeRegistry tiers are still stubs that raise NotImplementedError
+# (docs/ROADMAP.md).
 module TProp
   DEFAULT_MAX_EXAMPLES = 100
 
+  # Default on-disk location for persisted failing examples.
+  DEFAULT_CACHE_DIR = ".tprop-cache"
+
   class << self
+    # The database used by framework integrations (e.g. Minitest's
+    # assert_property) when the caller doesn't pass one. Defaults to a
+    # FileDatabase under DEFAULT_CACHE_DIR; set to nil to disable persistence,
+    # or to a MemoryDatabase to keep a test suite hermetic.
+    attr_writer :default_database
+
+    def default_database
+      return @default_database if defined?(@default_database)
+
+      @default_database = FileDatabase.new(DEFAULT_CACHE_DIR)
+    end
     # Framework-agnostic entry point. Runs `block` against generated values,
     # up to `max_examples` times, and on failure shrinks to a minimal
     # counterexample.
@@ -33,16 +48,28 @@ module TProp
     # @param overrides [Hash] per-prop generator overrides (tier 5)
     # @param max_examples [Integer]
     # @param seed [Integer, nil]
+    # @param database [#[], #[]=, #delete, nil] example database (see TProp::Database)
+    # @param key [String, nil] stable key for this property; persistence happens
+    #   only when both `database` and `key` are given
     # @raise [TProp::PropertyFailure] when the property fails (carrying the shrunk counterexample)
-    def check(struct_class = nil, gen: nil, overrides: {}, max_examples: DEFAULT_MAX_EXAMPLES, seed: nil, &block)
+    def check(struct_class = nil, gen: nil, overrides: {}, max_examples: DEFAULT_MAX_EXAMPLES, seed: nil,
+              database: nil, key: nil, &block)
       raise ArgumentError, "provide a struct class or gen:, not both" if struct_class && gen
       raise ArgumentError, "a property block is required" unless block
 
       generator = gen || Derive.for_struct(struct_class, overrides: overrides)
       rng = seed ? Random.new(seed) : Random.new
+      persist = !database.nil? && !key.nil?
 
       state = TestingState.new(gen: generator, property: block, max_examples: max_examples, rng: rng)
+      state.replay(database[key]) if persist # stored failing example replays first
       state.run
+
+      # Persist the outcome: save a (possibly re-shrunk) failure, drop a stale
+      # entry once the property passes again.
+      if persist
+        state.failed? ? database[key] = state.result : database.delete(key)
+      end
 
       raise Unsatisfiable, "no valid examples were generated (every case was rejected)" if state.valid_test_cases.zero?
       return unless state.failed?
