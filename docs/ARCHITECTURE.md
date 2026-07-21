@@ -4,6 +4,11 @@ This is the technical design of the engine. It is the reference for anyone
 working on the library internals. The one decision everything else hangs off is
 the **choice-sequence representation**, so it comes first.
 
+> **Implementation status.** The engine (`TestCase`/`Gen`/`TestingState`),
+> `Derive`, `StructuralEquality`, and the example database are implemented. The
+> five-tier resolution's middle tiers (the registries) are not yet — see the
+> notes inline and `ROADMAP.md` for the authoritative status.
+
 ## The foundational decision: a choice sequence, not values
 
 Every source of randomness in a TProp run flows through a single method that
@@ -55,23 +60,28 @@ hack.
 
 ### `TestingState` (the runner + shrinker)
 
-Runs the property up to `max_examples` times, caches results keyed by the choice
-sequence, and on a failing (interesting) case runs shrink passes to a fixed
-point under a **shortlex total order** (shorter sequences first; ties broken
-lexicographically). The shrink passes, in order:
+Runs the property up to `max_examples` times and, on a failing (interesting)
+case, runs shrink passes to a fixed point under a **shortlex total order**
+(shorter sequences first; ties broken lexicographically). The shrink passes, in
+order:
 
 1. **Chunk deletion** with a length-nudge — delete contiguous runs of choices
    (this is what collapses list length and structural size).
 2. **Block zeroing** — set spans of choices to zero (collapses values toward
    their simplest).
 3. **Per-choice binary search** — minimize each individual integer.
-4. **Local reorder** — swap adjacent elements to expose smaller equivalents.
+4. **Sort / redistribute** — sort out-of-order ranges of choices, and swap and
+   rebalance adjacent pairs (helps properties that depend on a sum). These are
+   lexicographic tidy-ups.
 
 Each candidate is accepted only if it is still interesting *and* strictly
-smaller under shortlex. The engine has bitten us before precisely here — a
-deleted method body once made `better?` silently return `nil` (passing
-everything); an `Array` comparison used `<` instead of `<=>`. These are the
-places to keep tests sharp.
+smaller under shortlex. The acceptance test (`TestingState.shortlex_smaller?`)
+compares `[length, choices]` with `<=>`, **not** `<` — an `Array` comparison
+with `<` was a historical bug here, so keep those tests sharp.
+
+The shrink-time cache (minithesis's `CachedTestFunction`, which memoizes
+choice-sequence → status) is a deferred optimization; the current shrinker
+re-runs the property directly. Correct, just not maximally fast.
 
 ## The generator layer: `Gen`
 
@@ -90,30 +100,45 @@ Primitives (all shrinking toward the simplest value):
 
 - `constant(v)`
 - `integers(range | min:/max:)` — anchored at the in-range point nearest zero so
-  shrinking lands there.
-- `strings`, `lists`, `nilable`, `one_of`, and the rest of the usual kit.
+  shrinking lands there. Ranges spanning zero draw a magnitude then a sign, so
+  both signs are reachable while all-zeros still decodes to `0`.
+- `strings`, `lists`, `nilable`, `one_of`, `tuples`, and the rest of the usual kit.
 
-Float encoding is currently naive and is a known area to improve (predictable
-shrinking of floats wants care — shrink toward simple values like 0.0 and small
-integers-as-floats, not toward bit-pattern neighbors).
+`Gen.floats` is **not yet implemented** as a public primitive (it raises):
+predictable float shrinking wants care — toward simple values like 0.0 and small
+integers-as-floats, not toward bit-pattern neighbors. `Derive` generates floats
+from an internal naive combinator (integer part + hundredths, shrinking to 0.0)
+in the meantime.
 
 ## The derivation layer: `Derive`
 
-`Derive.for_struct(StructClass, overrides:)` walks `StructClass.props`, and for
-each prop calls `Derive.for_type(type)`, which does structural recursion over
-the `T::Types::*` tree: `Simple` (Integer, String, Float, etc.), `Union`
-(including `T.nilable` as `T.any(X, NilClass)`), `TypedArray`, `TypedHash`,
-`T::Enum` subclasses (choose among the enum's values), and nested `T::Struct`
-(recurse). The composed `Gen` produces a fully populated struct instance.
+`Derive.for_struct(StructClass, overrides:)` walks `StructClass.props` (reading
+each prop's `:type_object`), and for each prop calls `Derive.for_type(type)`,
+which does structural recursion over the reified type tree: `Simple` (dispatched
+on `.raw_type` to a primitive, a nested `T::Struct` (recurse), or a `T::Enum`
+subclass (choose among its values)), `TypedArray`, `TypedHash`, `TypedSet`,
+`FixedArray`, and union nodes. The composed `Gen` produces a fully populated
+struct instance via keyword args.
 
-Known gaps to close (see roadmap): **recursion cycle detection** for
-self-referential or mutually-referential structs (currently would recurse
-unboundedly), and broader coverage of exotic `T::Types` nodes. `sorbet-schema`'s
-type walk is useful *reference* code for the edge cases (nilable, nested,
-enums, `T.any`, cycles) — not a dependency, since TProp owns this traversal, but
-a good check against a second implementation.
+A validation note worth recording (this is why the roadmap insisted on grounding
+against real `sorbet-runtime`): `T.nilable(X)` and `T::Boolean` do **not** reify
+as `T::Types::Union` — they are `T::Private::Types::SimplePairUnion`. So unions
+are matched by duck-typing `.types` rather than a class name, which covers both.
+Union members are ordered so `NilClass` comes first, so nilables shrink to `nil`.
+
+Known gaps to close (see roadmap): **recursion cycle detection** for self- or
+mutually-referential structs — currently `Derive` tracks the build stack and
+raises a clear error on a cycle rather than recursing unboundedly, but does not
+yet *generate* finite values for them. `sorbet-schema`'s type walk is useful
+*reference* code for the edge cases — not a dependency, since TProp owns this
+traversal, but a good check against a second implementation.
 
 ## Generator resolution: the five tiers
+
+> **Status:** tiers 1 (structural) and 5 (call-site overrides) are implemented.
+> Tiers 2–4 depend on the registries, which are still stubs (`register`,
+> `register_type`, `reset_registry!` raise `NotImplementedError`). The design
+> below is the plan for the middle tiers.
 
 When `Derive` needs a generator for a type or prop, it resolves in this order,
 each tier overriding the ones above it:
@@ -143,7 +168,7 @@ test isolation of TProp itself and of suites that register generators.
 
 ```ruby
 # Framework-agnostic:
-TProp.check(StructClass, overrides:, max_examples:, seed:) { |value| ... }
+TProp.check(StructClass, overrides:, max_examples:, seed:, database:, key:) { |value| ... }
 TProp.check(gen: some_gen, ...) { |value| ... }
 
 # Minitest integration (mixed into your test class):
@@ -155,6 +180,23 @@ Minitest integration reuses Minitest's `--seed` so `-s 12345` reproduces a
 property run, and converts a `TProp::PropertyFailure` into a
 `Minitest::Assertion` (reported as F, not E) while preserving the shrunk
 counterexample's backtrace.
+
+## The example database
+
+Persists the shrunk failing choice sequence per property, so the next run
+replays it first — the reproducibility job, and the corpus substrate the
+fuzzing horizon reuses. A database is any object exposing `db[key]` (→
+`Array<Integer>` or nil), `db[key] = choices`, and `db.delete(key)`. Two ship:
+`TProp::MemoryDatabase` and `TProp::FileDatabase` (one JSON file per key under
+`.tprop-cache/`; corrupt entries are treated as absent, never fatal).
+
+`TProp.check` persists only when given both `database:` and `key:` — no
+surprise file-writes from the low-level API. The Minitest integration opts in
+automatically, keyed by `"Class#method"`, using the configurable
+`TProp.default_database`. The flow: a stored example replays first (via
+`TestingState#replay`); if it still fails it seeds the result and is then
+*re-shrunk* (so a stale-but-failing example adapts to code changes); a passing
+run clears the entry.
 
 ## Companion value-object support
 

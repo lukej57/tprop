@@ -106,7 +106,9 @@ annotated on each — the annotation is the part that lands.
 
 ### Status
 
-Runnable once `Derive` + `TestingState` land. The "after" half already exists as
-skipped tests in `examples/roster`; the "before" half and the measurement
-harness are the work. This is a docs/marketing deliverable, adjacent to the
+The "after" half runs today: `Derive`, `TestingState`, and the example database
+have landed, and the `examples/roster` property tests execute (no longer
+skipped). What remains is the "before" half — a database-backed ActiveRecord
+test — plus the measurement harness that runs both under a fixed budget and
+reports the numbers. This is a docs/marketing deliverable, adjacent to the
 release, not a library feature.
